@@ -1,0 +1,161 @@
+/////////--------IOT--------FIAP------------///////////
+
+#include <WiFi.h>
+#include <ArduinoJson.h>
+#include <PubSubClient.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C LCD = LiquidCrystal_I2C(0x27, 20, 4);
+
+// Configurações de WiFi
+const char *SSID = "Wokwi-GUEST";
+const char *PASSWORD = "";  // Substitua pelo sua senha
+
+// Configurações de MQTT
+const char *BROKER_MQTT = "broker.hivemq.com";
+const int BROKER_PORT = 1883;
+const char *ID_MQTT = "esp32_mqtt";
+const char *TOPIC_SUBSCRIBE= "fiap/iot/subs";
+const char *TOPIC_PUBLISH= "fiap/iot/gs";
+
+static char mensagem[1000] = {0};
+
+
+// Configurações de Hardware
+#define PUBLISH_DELAY 2000
+#define botao 34
+int estado = 0;
+
+// Variáveis globais
+WiFiClient espClient;
+PubSubClient MQTT(espClient);
+unsigned long publishUpdate = 0;
+const int TAMANHO = 200;
+
+// Protótipos de funções
+void initWiFi();
+void initMQTT();
+void callbackMQTT(char *topic, byte *payload, unsigned int length);
+void reconnectMQTT();
+void reconnectWiFi();
+void checkWiFIAndMQTT();
+
+
+void initWiFi() {
+  Serial.print("Conectando com a rede: ");
+  Serial.println(SSID);
+  WiFi.begin(SSID, PASSWORD);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.print("Conectado com sucesso: ");
+  Serial.println(SSID);
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+void initMQTT() {
+  MQTT.setServer(BROKER_MQTT, BROKER_PORT);
+  MQTT.setCallback(callbackMQTT);
+}
+
+void callbackMQTT(char *topic, byte *payload, unsigned int length) {
+  String msg = String((char*)payload).substring(0, length);
+  
+  Serial.printf("Mensagem recebida via MQTT: %s do tópico: %s\n", msg.c_str(), topic);
+
+}
+  
+
+
+void reconnectMQTT() {
+  while (!MQTT.connected()) {
+    Serial.print("Tentando conectar com o Broker MQTT: ");
+    Serial.println(BROKER_MQTT);
+
+    if (MQTT.connect(ID_MQTT)) {
+      Serial.println("Conectado ao broker MQTT!");
+      MQTT.subscribe(TOPIC_SUBSCRIBE);
+    } else {
+      Serial.println("Falha na conexão com MQTT. Tentando novamente em 2 segundos.");
+      delay(2000);
+    }
+  }
+}
+
+void checkWiFIAndMQTT() {
+  if (WiFi.status() != WL_CONNECTED) reconnectWiFi();
+  if (!MQTT.connected()) reconnectMQTT();
+}
+
+void reconnectWiFi(void) {
+  if (WiFi.status() == WL_CONNECTED)
+    return;
+
+  WiFi.begin(SSID, PASSWORD); // Conecta na rede WI-FI
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.print("Wifi conectado com sucesso");
+  Serial.print(SSID);
+  Serial.println("IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(botao, INPUT);
+  
+  initWiFi();
+  initMQTT();
+  LCD.init();
+  LCD.backlight();   
+}
+
+void loop() {
+    checkWiFIAndMQTT();
+    MQTT.loop();
+    estado=digitalRead(botao);
+    while (estado==HIGH){
+    String nome = "",horario = "",carteirinha="",convenio="";
+    LCD.clear();
+      Serial.println("Olá, qual é seu nome?");
+      while (nome.isEmpty()==true){
+          nome = Serial.readStringUntil('\n');
+    }
+      Serial.println("Qual o horário da consulta?");
+      while (horario.isEmpty()==true){
+          horario = Serial.readStringUntil('\n');
+      }
+      Serial.println("Qual o seu convenio?");
+      while (convenio.isEmpty()==true){
+          convenio = Serial.readStringUntil('\n');
+      }
+      Serial.println("Qual o numero da sua carteirinha?");
+      while (carteirinha.isEmpty()==true){
+          carteirinha = Serial.readStringUntil('\n');
+      }
+      sprintf(mensagem,"Nome do paciente : %s, Horário : %s , Nome do convenio : %s , Número carteirinha : %s ",nome,horario,convenio,carteirinha);
+      MQTT.publish(TOPIC_PUBLISH, mensagem);
+
+      LCD.setCursor(0, 0);
+      LCD.print("Paciente: "+String(nome));
+      LCD.setCursor(0, 1);
+      LCD.print("Horario: "+String(horario));
+      LCD.setCursor(0, 2);
+      LCD.print("Convenio: "+String(convenio));
+      LCD.setCursor(0, 3);
+      LCD.print("N Carterinha: "+String(carteirinha));
+      delay(10000);
+      digitalWrite (botao, LOW);
+      }
+  }
+

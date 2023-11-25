@@ -1,0 +1,105 @@
+[
+    {
+        "id": "d26611e1f197d478",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "046fd4e35bf726e9",
+        "type": "debug",
+        "z": "d26611e1f197d478",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 600,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "fec7666311b768c1",
+        "type": "mqtt in",
+        "z": "d26611e1f197d478",
+        "name": "",
+        "topic": "fiap/iot/temphumi",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "9fbc5efb091cf104",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 240,
+        "y": 200,
+        "wires": [
+            [
+                "046fd4e35bf726e9",
+                "d02f76862b7ec661"
+            ]
+        ]
+    },
+    {
+        "id": "d02f76862b7ec661",
+        "type": "node-red-contrib-whatsapp-cmb-send-message",
+        "z": "d26611e1f197d478",
+        "name": "",
+        "credtype": "account",
+        "account": "a2b194e3c00bd3f7",
+        "text": "payload",
+        "phonenumbervalue": "",
+        "apikeyvalue": "",
+        "apikeyinputtypemessage": "msg",
+        "phonenumberinputtypemessage": "msg",
+        "inputtypemessage": "msg",
+        "rejectssl": false,
+        "x": 500,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9fbc5efb091cf104",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "mqtt-dashboard.com",
+        "port": "1883",
+        "clientid": "Lucas",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "a2b194e3c00bd3f7",
+        "type": "node-red-contrib-whatsapp-cmb-account",
+        "name": "Lucas"
+    }
+]
